@@ -1,4 +1,34 @@
 NOTES FOR THE COVERING VISUALIZATION
 
 - Add QR code to scan and explain the variables on the screen
-- Add texts and events on timeline, it will appear on the screen according to epochy2.docx  
+- Add texts and events on timeline, it will appear on the screen according to epochy2.docx
+
+MATEJ NOTES
+- Hlavni screen (vsechny linie) rozdelit na epochy (tj. nejede cely plot za 252Ma, ale vzdy jen jedno obdobi napr. 252 az 201.4Ma Trias)  
+- Vsechny promenne jsou dole jako staticke krivky
+- Objevuji se eventy (kazdy event je specificky pro nejaky set promnenych)
+	- pri kazdem eventu se zvyrazni korespondujici promene a oznaci se vzdy misto eventu
+	- muze to byt naznaceno objevenim horizontalni carkou na prislustnych datech
+- zcela dole bude celkova timeline of 252 do 0 Ma 
+- vlevo nahore bude nazev napr. TRIAS
+
+- vsechny range pryc
+- MAG INT std pryc
+- ZIR PDF pryc
+
+Ktere promenne jdou s spolu
+
+sealevel, teplota, stroncium (SR)
+
+
+Co dohoromady (dolu do grafu):
+Oba dva druhy Zirkonu dohromady
+Dve teploty dohromady
+BIO diversitu dat dohromady
+MAG taky dohromady
+02 a CO2
+
+Cyril pouziva ostrejsi verzi MAG_POL_FREQUENCY
+
+
+

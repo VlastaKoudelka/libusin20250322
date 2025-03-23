@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+import matplotlib.colors as mcolors
 
 # Load the CSV file
 data = pd.read_csv('./data/filtered_data3.csv')
@@ -13,12 +14,14 @@ if data.empty or len(data.columns) < 2:
 plt.style.use('dark_background')
 fig, (ax_text, ax_plot) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [2, 2]})
 ax_text.axis('off')  # Turn off the axes for the text area
-ax_plot.set_xlabel('Age', color='white')
-ax_plot.set_ylabel('Value', color='white')
+ax_plot.set_xlabel('Age', color='white', fontfamily='monospace')
+ax_plot.set_ylabel('Value', color='white', fontfamily='monospace')
 ax_plot.grid(color='gray', linestyle='--', linewidth=0.5)
 
 # Set tick parameters for dark mode
-ax_plot.tick_params(colors='white')
+ax_plot.tick_params(colors='white', labelsize=8)
+for label in ax_plot.get_xticklabels() + ax_plot.get_yticklabels():
+    label.set_fontfamily('monospace')
 
 # Initialize text objects and lines
 text_objects = []
@@ -27,21 +30,26 @@ spacing = 0.05
 left_margin = 0
 top_margin = 0.95
 
+norm = mcolors.Normalize(vmin=0, vmax=len(data.columns) - 2)
 def init():
     global text_objects, lines
     text_objects = []
     lines = []
     for i, column in enumerate(data.columns):
-        text = ax_text.text(left_margin, top_margin - i * spacing, '', fontsize=6.5, fontfamily='monospace', color='white', transform=ax_text.transAxes)
+        if i == 0:
+            color = 'white'  # Use white for 'Age'
+        else:
+        # Normalize the index to the range [0, 1] for the colormap
+            color = plt.cm.viridis(norm(i - 1))  # Use normalized index for colormap
+        text = ax_text.text(left_margin, top_margin - i * spacing, '', fontsize=6.5, fontfamily='monospace', color=color, transform=ax_text.transAxes)
         text_objects.append(text)
     
     # Create a line for each column except 'Age'
-    for column in data.columns[1:]:
-        line, = ax_plot.plot([], [], lw=1, label=column)
+    for i, column in enumerate(data.columns[1:]):
+        line, = ax_plot.plot([], [], lw=1, label=column, color=plt.cm.viridis(norm(i)))
         lines.append(line)
     
     ax_plot.set_xlim(252, 0)  # Set the x-axis range from 252 to 0
-    #ax_plot.legend(loc='upper right', fontsize=6, facecolor='black', edgecolor='white')
     return text_objects + lines
 
 # Update function for animation
@@ -69,7 +77,7 @@ def update(frame):
 # Create the animation
 frames = len(data)
 interval = 600 / frames  # Calculate interval for 1 minute duration
-ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=1000)
+ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=50)
 
 # Show the animation
 plt.tight_layout()
