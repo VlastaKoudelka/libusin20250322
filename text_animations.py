@@ -6,6 +6,8 @@ import matplotlib.colors as mcolors
 # Load the CSV file
 data = pd.read_csv('./data/filtered_data3.csv')
 
+epochs = [[245,235]]
+
 # Ensure the data has the correct structure
 if data.empty or len(data.columns) < 2:
     raise ValueError("The CSV file must have at least two columns: 'Age' and at least one value column.")
@@ -46,7 +48,7 @@ def init():
     
     # Create a line for each column except 'Age'
     for i, column in enumerate(data.columns[1:]):
-        line, = ax_plot.plot([], [], lw=1, label=column, color=plt.cm.viridis(norm(i)))
+        line, = ax_plot.plot([], [], lw=2, label=column, color=plt.cm.viridis(norm(i)))
         lines.append(line)
     
     ax_plot.set_xlim(252, 0)  # Set the x-axis range from 252 to 0
@@ -63,9 +65,20 @@ def update(frame):
     # Update the line plots
     if 'Age' in data.columns and frame < len(data):
         x = data['Age'][:frame + 1]
+        current_age = data['Age'].iloc[frame]
+        
+        # Check if the current age is within any of the epochs
+        in_epoch = any(start >= current_age >= end for start, end in epochs)
+        
         for i, column in enumerate(data.columns[1:]):
             y = data[column][:frame + 1]
             lines[i].set_data(x, y)
+            
+            # Dim the lines if in an epoch, except for 'BIO_ExtinctionIntensity (%)'
+            if in_epoch and column != 'MAG_INT_mean':
+                lines[i].set_alpha(0.2)  # Dim the line
+            else:
+                lines[i].set_alpha(1.0)  # Restore full opacity
         
         # Dynamically adjust the y-axis limits
         all_y_values = [data[column][:frame + 1] for column in data.columns[1:]]
