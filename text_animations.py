@@ -13,9 +13,12 @@ if data.empty or len(data.columns) < 2:
 plt.style.use('dark_background')
 fig, (ax_text, ax_plot) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [2, 2]})
 ax_text.axis('off')  # Turn off the axes for the text area
-ax_plot.set_xlabel('Age')
-ax_plot.set_ylabel('Value')
+ax_plot.set_xlabel('Age', color='white')
+ax_plot.set_ylabel('Value', color='white')
 ax_plot.grid(color='gray', linestyle='--', linewidth=0.5)
+
+# Set tick parameters for dark mode
+ax_plot.tick_params(colors='white')
 
 # Initialize text objects and lines
 text_objects = []
@@ -38,7 +41,7 @@ def init():
         lines.append(line)
     
     ax_plot.set_xlim(252, 0)  # Set the x-axis range from 252 to 0
-    #ax_plot.legend(loc='upper right', fontsize=6)
+    #ax_plot.legend(loc='upper right', fontsize=6, facecolor='black', edgecolor='white')
     return text_objects + lines
 
 # Update function for animation
@@ -66,7 +69,7 @@ def update(frame):
 # Create the animation
 frames = len(data)
 interval = 600 / frames  # Calculate interval for 1 minute duration
-ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=interval)
+ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=1000)
 
 # Show the animation
 plt.tight_layout()

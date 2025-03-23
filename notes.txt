@@ -1,0 +1,4 @@
+NOTES FOR THE COVERING VISUALIZATION
+
+- Add QR code to scan and explain the variables on the screen
+- Add texts and events on timeline, it will appear on the screen according to epochy2.docx  
