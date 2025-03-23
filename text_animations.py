@@ -6,7 +6,42 @@ import matplotlib.colors as mcolors
 # Load the CSV file
 data = pd.read_csv('./data/filtered_data3.csv')
 
-epochs = [[245,235]]
+#Select variables from the list
+data = data[['Age', 'BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 
+             'BIO_Difference_Cubic', 'SEA_Modern land sea level  (C = 176.6 106km2/km)',
+             'TEM_GAT', 'TEM_dT', 'CO2_pCO2 (ppm)', 'O2_Mid O2%',
+             'SR_87Sr/86Sr Mean', 'LIP_LIP_PDF', 'MAG_INT_mean', 'MAG_POL_FREQUENCY',
+             'ZIR_Interpolated_mean_d18O', 'ZIR_Interpolated_mean_Hf']]
+
+epochs = [[245, 235], [220, 210], [200, 190], [185, 175], [170, 160], [155, 145], [140, 130]]
+quantities = [['BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 'BIO_Difference_Cubic'],
+              ['SEA_Modern land sea level  (C = 176.6 106km2/km)', 'TEM_GAT', 'TEM_dT'],
+              ['CO2_pCO2 (ppm)', 'O2_Mid O2%'],
+              ['SR_87Sr/86Sr Mean'],
+              ['LIP_LIP_PDF'],
+              ['MAG_INT_mean', 'MAG_POL_FREQUENCY'],
+              ['ZIR_Interpolated_mean_d18O', 'ZIR_Interpolated_mean_Hf']]
+
+# Create a separate dataframe for opacity
+opacity_data = pd.DataFrame(1.0, index=data.index, columns=[f"{col}_alpha" for col in data.columns[1:]])
+
+# Update opacity values based on epochs and quantities
+for epoch, quantity_group in zip(epochs, quantities):
+    start, end = epoch
+    for column in data.columns[1:]:
+        alpha_column_name = f"{column}_alpha"
+        if column in quantity_group:
+            # Keep related quantities fully visible during the event
+            opacity_data.loc[(data['Age'] <= start) & (data['Age'] >= end), alpha_column_name] = 1.0
+        else:
+            # Dim unrelated quantities during the event
+            opacity_data.loc[(data['Age'] <= start) & (data['Age'] >= end), alpha_column_name] = 0.1
+            
+#smooth the opacity data
+opacity_data = opacity_data.rolling(window=5, min_periods=1).mean() # Smooth the opacity data
+
+
+
 
 # Ensure the data has the correct structure
 if data.empty or len(data.columns) < 2:
@@ -28,7 +63,7 @@ for label in ax_plot.get_xticklabels() + ax_plot.get_yticklabels():
 # Initialize text objects and lines
 text_objects = []
 lines = []
-spacing = 0.05
+spacing = 0.06
 left_margin = 0
 top_margin = 0.95
 
@@ -43,12 +78,12 @@ def init():
         else:
         # Normalize the index to the range [0, 1] for the colormap
             color = plt.cm.viridis(norm(i - 1))  # Use normalized index for colormap
-        text = ax_text.text(left_margin, top_margin - i * spacing, '', fontsize=6.5, fontfamily='monospace', color=color, transform=ax_text.transAxes)
+        text = ax_text.text(left_margin, top_margin - i * spacing, '', fontsize=7, fontfamily='monospace', color=color, transform=ax_text.transAxes)
         text_objects.append(text)
     
     # Create a line for each column except 'Age'
     for i, column in enumerate(data.columns[1:]):
-        line, = ax_plot.plot([], [], lw=2, label=column, color=plt.cm.viridis(norm(i)))
+        line, = ax_plot.plot([], [], lw=1, label=column, color=plt.cm.viridis(norm(i)))
         lines.append(line)
     
     ax_plot.set_xlim(252, 0)  # Set the x-axis range from 252 to 0
@@ -58,7 +93,11 @@ def init():
 def update(frame):
     for i, column in enumerate(data.columns):
         if frame < len(data):
-            text_objects[i].set_text(f"{column}: {round(data[column].iloc[frame], 2)}")      
+            text_objects[i].set_text(f"{column}: {round(data[column].iloc[frame], 2)}")
+            if i > 0:  # Skip 'Age' column
+                alpha_column_name = f"{column}_alpha"
+                if alpha_column_name in opacity_data.columns and frame < len(opacity_data):
+                    text_objects[i].set_alpha(opacity_data[alpha_column_name].iloc[frame])
         else:
             text_objects[i].set_text(f"{column}: N/A")
     
@@ -74,11 +113,10 @@ def update(frame):
             y = data[column][:frame + 1]
             lines[i].set_data(x, y)
             
-            # Dim the lines if in an epoch, except for 'BIO_ExtinctionIntensity (%)'
-            if in_epoch and column != 'MAG_INT_mean':
-                lines[i].set_alpha(0.2)  # Dim the line
-            else:
-                lines[i].set_alpha(1.0)  # Restore full opacity
+            # Apply the prepared alpha values from opacity_data
+            alpha_column_name = f"{column}_alpha"
+            if alpha_column_name in opacity_data.columns and frame < len(opacity_data):
+                lines[i].set_alpha(opacity_data[alpha_column_name].iloc[frame])
         
         # Dynamically adjust the y-axis limits
         all_y_values = [data[column][:frame + 1] for column in data.columns[1:]]
@@ -90,7 +128,7 @@ def update(frame):
 # Create the animation
 frames = len(data)
 interval = 600 / frames  # Calculate interval for 1 minute duration
-ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=50)
+ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=25)
 
 # Show the animation
 plt.tight_layout()
