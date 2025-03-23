@@ -31,4 +31,13 @@ MAG taky dohromady
 Cyril pouziva ostrejsi verzi MAG_POL_FREQUENCY
 
 
+Shlukovani promennych:
+['BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 'BIO_Difference_Cubic']
+['SEA_Modern land sea level (C = 176.6 106km2km)', 'TEM_GAT', 'TEM_dT']
+['CO2_pCO2 (ppm)', 'O2_Mid O2%']
+['SR_87Sr86Sr Mean']
+['LIP_LIP_PDF']
+['MAG_INT_mean', 'MAG_POL_FREQUENCY']
+['ZIR_Interpolated_mean_d18O','ZIR_Interpolated_mean_Hf'].
+
 
