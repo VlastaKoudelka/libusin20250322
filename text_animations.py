@@ -14,16 +14,11 @@ data = data[['Age', 'BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)'
              'SR_87Sr/86Sr Mean', 'LIP_LIP_PDF', 'MAG_INT_mean', 'MAG_POL_FREQUENCY',
              'ZIR_Interpolated_mean_d18O', 'ZIR_Interpolated_mean_Hf']]
 
-# Define epochs and quantities for each epoch and texts for each epoch
-Titletexts = ['Trias', 'Jura', 'Křída', 'Paleogén', 'Neogén', 'Kvartér']
-epochs = [[252, 201.4], [201.45, 143.1], [143.15, 66], [66.5, 23.05], [23.1, 2.5], [2.55, 0]]
+# Define events and quantities for each epoch and texts for each epoch
 
-# Create a new dataframe 'texting' containing the 'Age' column and a 'Title' column
-texting = pd.DataFrame({'Age': data['Age']})
-texting['Title'] = 'None'  # Default value
-for event, (start, end) in zip(Titletexts, epochs):
-    texting.loc[(data['Age'] <= start) & (data['Age'] >= end), 'Title'] = event
-    
+events = [[240,230],[200,195],[50,2]]
+ 
+#define the quantities for each epoch   
 quantities = [['BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 'BIO_Difference_Cubic'],
               ['SEA_Modern land sea level  (C = 176.6 106km2/km)', 'TEM_GAT', 'TEM_dT'],
               ['CO2_pCO2 (ppm)', 'O2_Mid O2%'],
@@ -39,8 +34,8 @@ style_data = pd.concat([style_data, pd.DataFrame(0.1, index=data.index, columns=
 style_data = pd.concat([style_data, pd.DataFrame(1.0, index=data.index, columns=[f"{col}_width" for col in data.columns[1:]])], axis=1)
 
 
-# Update opacity values based on epochs and quantities
-for epoch, quantity_group in zip(epochs, quantities):
+# Update opacity values based on events and quantities
+for epoch, quantity_group in zip(events, quantities):
     start, end = epoch
     for column in data.columns[1:]:
         alpha_column_name = f"{column}_alpha"
@@ -132,8 +127,8 @@ def update(frame):
         x = data['Age'][:frame + 1]
         current_age = data['Age'].iloc[frame]
         
-        # Check if the current age is within any of the epochs
-        in_epoch = any(start >= current_age >= end for start, end in epochs)
+        # Check if the current age is within any of the events
+        in_epoch = any(start >= current_age >= end for start, end in events)
         
         for i, column in enumerate(data.columns[1:]):
             y = data[column][:frame + 1]
