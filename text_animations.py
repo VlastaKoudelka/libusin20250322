@@ -15,8 +15,15 @@ data = data[['Age', 'BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)'
              'ZIR_Interpolated_mean_d18O', 'ZIR_Interpolated_mean_Hf']]
 
 # Define epochs and quantities for each epoch and texts for each epoch
-eventexts = ['Trias', 'Jura', 'Křída', 'Paleogén', 'Neogén', 'Kvartér']
-epochs = [[245, 235], [220, 210], [200, 190], [185, 175], [170, 160], [155, 145], [140, 130]]
+Titletexts = ['Trias', 'Jura', 'Křída', 'Paleogén', 'Neogén', 'Kvartér']
+epochs = [[252, 201.4], [201.45, 143.1], [143.15, 66], [66.5, 23.05], [23.1, 2.5], [2.55, 0]]
+
+# Create a new dataframe 'texting' containing the 'Age' column and a 'Title' column
+texting = pd.DataFrame({'Age': data['Age']})
+texting['Title'] = 'None'  # Default value
+for event, (start, end) in zip(Titletexts, epochs):
+    texting.loc[(data['Age'] <= start) & (data['Age'] >= end), 'Title'] = event
+    
 quantities = [['BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 'BIO_Difference_Cubic'],
               ['SEA_Modern land sea level  (C = 176.6 106km2/km)', 'TEM_GAT', 'TEM_dT'],
               ['CO2_pCO2 (ppm)', 'O2_Mid O2%'],
@@ -76,10 +83,12 @@ lines = []
 spacing = 0.06
 left_margin = 0
 top_margin = 0.95
+leftTitlePos = 0.5
+topTitlePos = 0.95
 
 norm = mcolors.Normalize(vmin=0, vmax=len(data.columns) - 2)
 def init():
-    global text_objects, lines, lines2, lineT
+    global text_objects, lines, lines2, lineT, text_title
     text_objects = []
     lines = []
     lines2 = []
@@ -100,9 +109,11 @@ def init():
         lines2.append(line2)
         line2.set_alpha(0.1)  # Set the alpha value for the second set of lines
         line2.set_data(data['Age'], data[column])  # Set the data for the second set of lines
+    text_title = ax_text.text(leftTitlePos, topTitlePos, '', fontsize=10, fontfamily='monospace', color='white', transform=ax_text.transAxes)
+    text_title.set_text('Trias')
     lineT = ax_plot.axvline(x=0, color='grey', linewidth=1, linestyle='-')
     ax_plot.set_xlim(252, 0)  # Set the x-axis range from 252 to 0
-    return text_objects + lines + lines2 + [lineT]
+    return text_objects + lines + lines2 + [lineT] + [text_title]
 
 # Update function for animation
 def update(frame):
@@ -135,13 +146,14 @@ def update(frame):
                 lines2[i].set_alpha(style_data[f"{column}_alpha2"].iloc[frame])
                 lines[i].set_linewidth(style_data[f"{column}_width"].iloc[frame])
         lineT.set_xdata([current_age, current_age])
+        text_title.set_text(texting['Title'].iloc[frame])
         #lineT.set_ydata([0, 1])        
         # Dynamically adjust the y-axis limits
         all_y_values = [data[column][:frame + 1] for column in data.columns[1:]]
         y_min = min([y.min() for y in all_y_values])
         y_max = max([y.max() for y in all_y_values])
         ax_plot.set_ylim(y_min, y_max)
-    return text_objects + lines + lines2 + [lineT]
+    return text_objects + lines + lines2 + [lineT] + [text_title]
 
 # Create the animation
 frames = len(data)
