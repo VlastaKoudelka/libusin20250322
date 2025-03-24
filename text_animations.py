@@ -17,7 +17,7 @@ data = data[['Age', 'BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)'
 
 # Define events and quantities for each epoch and texts for each epoch
 
-events = [[250,230],[200,195],[50,2]]
+events = [[225,220],[210,205],[202,201]]
  
 #define the quantities for each epoch   
 quantities = [['BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 'BIO_Difference_Cubic'],
