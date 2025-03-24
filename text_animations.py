@@ -23,25 +23,32 @@ quantities = [['BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 'BI
               ['ZIR_Interpolated_mean_d18O', 'ZIR_Interpolated_mean_Hf']]
 
 # Create a separate dataframe for opacity
-opacity_data = pd.DataFrame(1.0, index=data.index, columns=[f"{col}_alpha" for col in data.columns[1:]])
+maxwidth = 2.5
+style_data = pd.DataFrame(1.0, index=data.index, columns=[f"{col}_alpha" for col in data.columns[1:]])
+style_data = pd.concat([style_data, pd.DataFrame(0.1, index=data.index, columns=[f"{col}_alpha2" for col in data.columns[1:]])], axis=1)
+style_data = pd.concat([style_data, pd.DataFrame(1.0, index=data.index, columns=[f"{col}_width" for col in data.columns[1:]])], axis=1)
+
 
 # Update opacity values based on epochs and quantities
 for epoch, quantity_group in zip(epochs, quantities):
     start, end = epoch
     for column in data.columns[1:]:
         alpha_column_name = f"{column}_alpha"
+        alpha2_column_name = f"{column}_alpha2"
+        width_column_name = f"{column}_width"
         if column in quantity_group:
             # Keep related quantities fully visible during the event
-            opacity_data.loc[(data['Age'] <= start) & (data['Age'] >= end), alpha_column_name] = 1.0
+            style_data.loc[(data['Age'] <= start) & (data['Age'] >= end), alpha_column_name] = 1.0
+            style_data.loc[(data['Age'] <= start) & (data['Age'] >= end), alpha2_column_name] = 1.0
+            style_data.loc[(data['Age'] <= start) & (data['Age'] >= end), width_column_name] = maxwidth
         else:
             # Dim unrelated quantities during the event
-            opacity_data.loc[(data['Age'] <= start) & (data['Age'] >= end), alpha_column_name] = 0.1
+            style_data.loc[(data['Age'] <= start) & (data['Age'] >= end), alpha_column_name] = 0.1
+            style_data.loc[(data['Age'] <= start) & (data['Age'] >= end), alpha2_column_name] = 0.1
             
 #smooth the opacity data
-opacity_data = opacity_data.rolling(window=5, min_periods=1).mean() # Smooth the opacity data
-
-
-
+smoothness = 10
+style_data = style_data.rolling(window=smoothness, min_periods=1).mean() # Smooth the opacity data
 
 # Ensure the data has the correct structure
 if data.empty or len(data.columns) < 2:
@@ -69,9 +76,10 @@ top_margin = 0.95
 
 norm = mcolors.Normalize(vmin=0, vmax=len(data.columns) - 2)
 def init():
-    global text_objects, lines
+    global text_objects, lines, lines2
     text_objects = []
     lines = []
+    lines2 = []
     for i, column in enumerate(data.columns):
         if i == 0:
             color = 'white'  # Use white for 'Age'
@@ -84,10 +92,14 @@ def init():
     # Create a line for each column except 'Age'
     for i, column in enumerate(data.columns[1:]):
         line, = ax_plot.plot([], [], lw=1, label=column, color=plt.cm.viridis(norm(i)))
+        line2, = ax_plot.plot([], [], lw=1, label=column, color=plt.cm.viridis(norm(i)))
         lines.append(line)
+        lines2.append(line2)
+        line2.set_alpha(0.1)  # Set the alpha value for the second set of lines
+        line2.set_data(data['Age'], data[column])  # Set the data for the second set of lines
     
     ax_plot.set_xlim(252, 0)  # Set the x-axis range from 252 to 0
-    return text_objects + lines
+    return text_objects + lines + lines2
 
 # Update function for animation
 def update(frame):
@@ -96,8 +108,8 @@ def update(frame):
             text_objects[i].set_text(f"{column}: {round(data[column].iloc[frame], 2)}")
             if i > 0:  # Skip 'Age' column
                 alpha_column_name = f"{column}_alpha"
-                if alpha_column_name in opacity_data.columns and frame < len(opacity_data):
-                    text_objects[i].set_alpha(opacity_data[alpha_column_name].iloc[frame])
+                if alpha_column_name in style_data.columns and frame < len(style_data):
+                    text_objects[i].set_alpha(style_data[alpha_column_name].iloc[frame])
         else:
             text_objects[i].set_text(f"{column}: N/A")
     
@@ -113,22 +125,24 @@ def update(frame):
             y = data[column][:frame + 1]
             lines[i].set_data(x, y)
             
-            # Apply the prepared alpha values from opacity_data
+            # Apply the prepared alpha values from style_data
             alpha_column_name = f"{column}_alpha"
-            if alpha_column_name in opacity_data.columns and frame < len(opacity_data):
-                lines[i].set_alpha(opacity_data[alpha_column_name].iloc[frame])
+            if alpha_column_name in style_data.columns and frame < len(style_data):
+                lines[i].set_alpha(style_data[alpha_column_name].iloc[frame])
+                lines2[i].set_alpha(style_data[f"{column}_alpha2"].iloc[frame])
+                lines[i].set_linewidth(style_data[f"{column}_width"].iloc[frame])
         
         # Dynamically adjust the y-axis limits
         all_y_values = [data[column][:frame + 1] for column in data.columns[1:]]
         y_min = min([y.min() for y in all_y_values])
         y_max = max([y.max() for y in all_y_values])
         ax_plot.set_ylim(y_min, y_max)
-    return text_objects + lines
+    return text_objects + lines + lines2
 
 # Create the animation
 frames = len(data)
 interval = 600 / frames  # Calculate interval for 1 minute duration
-ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=25)
+ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=50)
 
 # Show the animation
 plt.tight_layout()
