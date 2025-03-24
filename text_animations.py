@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FFMpegWriter
 import matplotlib.colors as mcolors
 
 # Load the CSV file
@@ -13,6 +14,8 @@ data = data[['Age', 'BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)'
              'SR_87Sr/86Sr Mean', 'LIP_LIP_PDF', 'MAG_INT_mean', 'MAG_POL_FREQUENCY',
              'ZIR_Interpolated_mean_d18O', 'ZIR_Interpolated_mean_Hf']]
 
+# Define epochs and quantities for each epoch and texts for each epoch
+eventexts = ['Trias', 'Jura', 'Křída', 'Paleogén', 'Neogén', 'Kvartér']
 epochs = [[245, 235], [220, 210], [200, 190], [185, 175], [170, 160], [155, 145], [140, 130]]
 quantities = [['BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 'BIO_Difference_Cubic'],
               ['SEA_Modern land sea level  (C = 176.6 106km2/km)', 'TEM_GAT', 'TEM_dT'],
@@ -76,7 +79,7 @@ top_margin = 0.95
 
 norm = mcolors.Normalize(vmin=0, vmax=len(data.columns) - 2)
 def init():
-    global text_objects, lines, lines2
+    global text_objects, lines, lines2, lineT
     text_objects = []
     lines = []
     lines2 = []
@@ -85,21 +88,21 @@ def init():
             color = 'white'  # Use white for 'Age'
         else:
         # Normalize the index to the range [0, 1] for the colormap
-            color = plt.cm.viridis(norm(i - 1))  # Use normalized index for colormap
+            color = plt.cm.tab20(norm(i - 1))  # Use normalized index for colormap
         text = ax_text.text(left_margin, top_margin - i * spacing, '', fontsize=7, fontfamily='monospace', color=color, transform=ax_text.transAxes)
         text_objects.append(text)
     
     # Create a line for each column except 'Age'
     for i, column in enumerate(data.columns[1:]):
-        line, = ax_plot.plot([], [], lw=1, label=column, color=plt.cm.viridis(norm(i)))
-        line2, = ax_plot.plot([], [], lw=1, label=column, color=plt.cm.viridis(norm(i)))
+        line, = ax_plot.plot([], [], lw=1, label=column, color=plt.cm.tab20(norm(i)))
+        line2, = ax_plot.plot([], [], lw=1, label=column, color=plt.cm.tab20(norm(i)))
         lines.append(line)
         lines2.append(line2)
         line2.set_alpha(0.1)  # Set the alpha value for the second set of lines
         line2.set_data(data['Age'], data[column])  # Set the data for the second set of lines
-    
+    lineT = ax_plot.axvline(x=0, color='grey', linewidth=1, linestyle='-')
     ax_plot.set_xlim(252, 0)  # Set the x-axis range from 252 to 0
-    return text_objects + lines + lines2
+    return text_objects + lines + lines2 + [lineT]
 
 # Update function for animation
 def update(frame):
@@ -131,18 +134,25 @@ def update(frame):
                 lines[i].set_alpha(style_data[alpha_column_name].iloc[frame])
                 lines2[i].set_alpha(style_data[f"{column}_alpha2"].iloc[frame])
                 lines[i].set_linewidth(style_data[f"{column}_width"].iloc[frame])
-        
+        lineT.set_xdata([current_age, current_age])
+        #lineT.set_ydata([0, 1])        
         # Dynamically adjust the y-axis limits
         all_y_values = [data[column][:frame + 1] for column in data.columns[1:]]
         y_min = min([y.min() for y in all_y_values])
         y_max = max([y.max() for y in all_y_values])
         ax_plot.set_ylim(y_min, y_max)
-    return text_objects + lines + lines2
+    return text_objects + lines + lines2 + [lineT]
 
 # Create the animation
 frames = len(data)
 interval = 600 / frames  # Calculate interval for 1 minute duration
-ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=50)
+ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=25)
+
+# Export the animation to an MP4 file
+# duration_seconds=4844
+# fps = frames / duration_seconds # Calculate the frames per second
+# writer = FFMpegWriter(fps=30, metadata=dict(artist='Me'), bitrate=1800)
+# ani.save('./output/animation.mp4', writer=writer)
 
 # Show the animation
 plt.tight_layout()
