@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.animation import FFMpegWriter
 import matplotlib.colors as mcolors
+import textwrap
 
 # Load the CSV file
 data = pd.read_csv('./data/filtered_data3.csv')
@@ -16,7 +17,7 @@ data = data[['Age', 'BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)'
 
 # Define events and quantities for each epoch and texts for each epoch
 
-events = [[240,230],[200,195],[50,2]]
+events = [[250,230],[200,195],[50,2]]
  
 #define the quantities for each epoch   
 quantities = [['BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 'BIO_Difference_Cubic'],
@@ -61,7 +62,10 @@ if data.empty or len(data.columns) < 2:
 
 # Prepare the figure with a dark style
 plt.style.use('dark_background')
-fig, (ax_text, ax_plot) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [2, 2]})
+dpi = 100  # Dots per inch
+width_in_pixels = 1920  # Desired width in pixels
+height_in_pixels = 1080  # Desired height in pixels
+fig, (ax_text, ax_plot) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [2, 2]},figsize=(width_in_pixels / dpi, height_in_pixels / dpi), dpi=dpi)
 ax_text.axis('off')  # Turn off the axes for the text area
 ax_plot.set_xlabel('Age', color='white', fontfamily='monospace')
 ax_plot.set_ylabel('Value', color='white', fontfamily='monospace')
@@ -80,10 +84,11 @@ left_margin = 0
 top_margin = 0.95
 leftTitlePos = 0.5
 topTitlePos = 0.95
+box_width = 50  # Maximum number of characters per line
 
 norm = mcolors.Normalize(vmin=0, vmax=len(data.columns) - 2)
 def init():
-    global text_objects, lines, lines2, lineT, text_title
+    global text_objects, lines, lines2, lineT, text_title, event_text_box
     text_objects = []
     lines = []
     lines2 = []
@@ -104,11 +109,14 @@ def init():
         lines2.append(line2)
         line2.set_alpha(0.1)  # Set the alpha value for the second set of lines
         line2.set_data(data['Age'], data[column])  # Set the data for the second set of lines
-    text_title = ax_text.text(leftTitlePos, topTitlePos, '', fontsize=10, fontfamily='monospace', color='white', transform=ax_text.transAxes)
+    text_title = ax_text.text(leftTitlePos, topTitlePos, '', fontsize=12, fontfamily='monospace', color='white', transform=ax_text.transAxes)
     text_title.set_text('Trias')
+    event_text_box = ax_text.text(0.5, 0.1, '', fontsize=10, color='white', fontfamily='monospace',
+                                  bbox=dict(facecolor='black', alpha=0.7, boxstyle='round,pad=0.5'),
+                                  transform=ax_text.transAxes, ha='center')
     lineT = ax_plot.axvline(x=0, color='grey', linewidth=1, linestyle='-')
     ax_plot.set_xlim(252, 0)  # Set the x-axis range from 252 to 0
-    return text_objects + lines + lines2 + [lineT] + [text_title]
+    return text_objects + lines + lines2 + [lineT] + [text_title] + [event_text_box]    
 
 # Update function for animation
 def update(frame):
@@ -126,7 +134,8 @@ def update(frame):
     if 'Age' in data.columns and frame < len(data):
         x = data['Age'][:frame + 1]
         current_age = data['Age'].iloc[frame]
-        
+        current_event = df_text['Event_text'].iloc[frame]
+        current_event= "\n".join(textwrap.wrap(current_event, width=box_width))
         # Check if the current age is within any of the events
         in_epoch = any(start >= current_age >= end for start, end in events)
         
@@ -142,13 +151,14 @@ def update(frame):
                 lines[i].set_linewidth(style_data[f"{column}_width"].iloc[frame])
         lineT.set_xdata([current_age, current_age])
         text_title.set_text(df_text['Title'].iloc[frame])
-        #lineT.set_ydata([0, 1])        
+        #lineT.set_ydata([0, 1])  
+        event_text_box.set_text(current_event)     
         # Dynamically adjust the y-axis limits
         all_y_values = [data[column][:frame + 1] for column in data.columns[1:]]
         y_min = min([y.min() for y in all_y_values])
         y_max = max([y.max() for y in all_y_values])
         ax_plot.set_ylim(y_min, y_max)
-    return text_objects + lines + lines2 + [lineT] + [text_title]
+    return text_objects + lines + lines2 + [lineT] + [text_title] + [event_text_box]    
 
 # Create the animation
 frames = len(data)
