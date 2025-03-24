@@ -6,7 +6,7 @@ import matplotlib.colors as mcolors
 
 # Load the CSV file
 data = pd.read_csv('./data/filtered_data3.csv')
-
+df_text = pd.read_csv('data/texts.csv')
 #Select variables from the list
 data = data[['Age', 'BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 
              'BIO_Difference_Cubic', 'SEA_Modern land sea level  (C = 176.6 106km2/km)',
@@ -146,7 +146,7 @@ def update(frame):
                 lines2[i].set_alpha(style_data[f"{column}_alpha2"].iloc[frame])
                 lines[i].set_linewidth(style_data[f"{column}_width"].iloc[frame])
         lineT.set_xdata([current_age, current_age])
-        text_title.set_text(texting['Title'].iloc[frame])
+        text_title.set_text(df_text['Title'].iloc[frame])
         #lineT.set_ydata([0, 1])        
         # Dynamically adjust the y-axis limits
         all_y_values = [data[column][:frame + 1] for column in data.columns[1:]]
@@ -163,7 +163,7 @@ ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, inter
 # Export the animation to an MP4 file
 # duration_seconds=4844
 # fps = frames / duration_seconds # Calculate the frames per second
-# writer = FFMpegWriter(fps=30, metadata=dict(artist='Me'), bitrate=1800)
+# writer = FFMpegWriter(fps=30, metadata=dict(artist='Me'), bitrate=500)
 # ani.save('./output/animation.mp4', writer=writer)
 
 # Show the animation
