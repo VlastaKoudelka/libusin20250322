@@ -169,8 +169,8 @@ ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, inter
 # Export the animation to an MP4 file
 # duration_seconds=4844
 # fps = frames / duration_seconds # Calculate the frames per second
-writer = FFMpegWriter(fps=10, metadata=dict(artist='Me'), bitrate=2500)
-ani.save('./output/animation.mp4', writer=writer)
+#writer = FFMpegWriter(fps=10, metadata=dict(artist='Me'), bitrate=2500)
+#ani.save('./output/animation.mp4', writer=writer)
 
 # Show the animation
 plt.tight_layout()
