@@ -8,6 +8,7 @@ import textwrap
 # Load the CSV file
 data = pd.read_csv('./data/filtered_data3.csv')
 df_text = pd.read_csv('data/texts.csv')
+df_events = pd.read_csv('data\Events_texts.csv')
 #Select variables from the list
 data = data[['Age', 'BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 
              'BIO_Difference_Cubic', 'SEA_Modern land sea level  (C = 176.6 106km2/km)',
@@ -16,17 +17,11 @@ data = data[['Age', 'BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)'
              'ZIR_Interpolated_mean_d18O', 'ZIR_Interpolated_mean_Hf']]
 
 # Define events and quantities for each epoch and texts for each epoch
+events = [[float(onset.replace(',', '.')), float(offset.replace(',', '.'))] for onset, offset in zip(df_events['Onset'], df_events['Offset'])]
 
-events = [[225,220],[210,205],[202,201]]
- 
-#define the quantities for each epoch   
-quantities = [['BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 'BIO_Difference_Cubic'],
-              ['SEA_Modern land sea level  (C = 176.6 106km2/km)', 'TEM_GAT', 'TEM_dT'],
-              ['CO2_pCO2 (ppm)', 'O2_Mid O2%'],
-              ['SR_87Sr/86Sr Mean'],
-              ['LIP_LIP_PDF'],
-              ['MAG_INT_mean', 'MAG_POL_FREQUENCY'],
-              ['ZIR_Interpolated_mean_d18O', 'ZIR_Interpolated_mean_Hf']]
+#define the quantities for each epoch
+quantities = [eval(row) if pd.notna(row) else [] for row in df_events['Quantities']]   
+
 
 # Create a separate dataframe for opacity
 maxwidth = 2.5
@@ -134,10 +129,15 @@ def update(frame):
     if 'Age' in data.columns and frame < len(data):
         x = data['Age'][:frame + 1]
         current_age = data['Age'].iloc[frame]
-        current_event = df_text['Event_text'].iloc[frame]
-        current_event= "\n".join(textwrap.wrap(current_event, width=box_width))
         # Check if the current age is within any of the events
         in_epoch = any(start >= current_age >= end for start, end in events)
+        epoch_index = next((i for i, (start, end) in enumerate(events) if start >= current_age >= end), None)
+        if epoch_index is not None:
+            current_event = df_events['Text'].iloc[epoch_index]
+            current_event= "\n".join(textwrap.wrap(current_event, width=box_width))
+        else:
+            current_event = []
+
         
         for i, column in enumerate(data.columns[1:]):
             y = data[column][:frame + 1]
