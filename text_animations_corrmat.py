@@ -78,20 +78,26 @@ width_in_pixels = 1920  # Desired width in pixels
 height_in_pixels = 1080  # Desired height in pixels
 fig, (ax_text, ax_plot) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [2, 2]},figsize=(width_in_pixels / dpi, height_in_pixels / dpi), dpi=dpi)
 ax_text.axis('off')  # Turn off the axes for the text area
-ax_plot.set_xlabel('Age', color='white', fontfamily='monospace', fontsize=10)
-ax_plot.set_ylabel('Normalized Value', color='white', fontfamily='monospace', fontsize=10)
+ax_plot.set_xlabel('Age', color='white', fontfamily='monospace')
+ax_plot.set_ylabel('Value', color='white', fontfamily='monospace')
 ax_plot.grid(color='gray', linestyle='--', linewidth=0.5)
 
+sliding_window_size = 1  # Size of the sliding window in Age units for correlation matrix
+
+# Create a new axis for the correlation matrix
+ax_corr = fig.add_axes([0.7, 0.7, 0.25, 0.25])  # Adjust position and size as needed
+ax_corr.set_title('Correlation Matrix', fontsize=8, color='white', fontfamily='monospace')
+ax_corr.axis('off')  # Initially turn off the axis
 
 # Set tick parameters for dark mode
-ax_plot.tick_params(colors='white', labelsize=10)
+ax_plot.tick_params(colors='white', labelsize=8)
 for label in ax_plot.get_xticklabels() + ax_plot.get_yticklabels():
     label.set_fontfamily('monospace')
 
 # Initialize text objects and lines
 text_objects = []
 lines = []
-spacing = 0.065
+spacing = 0.06
 left_margin = 0
 top_margin = 0.95
 leftTitlePos = 0.5
@@ -110,7 +116,7 @@ def init():
         else:
         # Normalize the index to the range [0, 1] for the colormap
             color = plt.cm.tab20(norm(i - 1))  # Use normalized index for colormap
-        text = ax_text.text(left_margin, top_margin - i * spacing, '', fontsize=12, fontfamily='monospace', color=color, transform=ax_text.transAxes)
+        text = ax_text.text(left_margin, top_margin - i * spacing, '', fontsize=7, fontfamily='monospace', color=color, transform=ax_text.transAxes)
         text_objects.append(text)
     
     # Create a line for each column except 'Age'
@@ -121,24 +127,15 @@ def init():
         lines2.append(line2)
         line2.set_alpha(0.1)  # Set the alpha value for the second set of lines
         line2.set_data(data['Age'], data[column])  # Set the data for the second set of lines
-    text_title = ax_text.text(leftTitlePos, topTitlePos, '', fontsize=14, fontfamily='monospace', color='white', transform=ax_text.transAxes)
+    text_title = ax_text.text(leftTitlePos, topTitlePos, '', fontsize=12, fontfamily='monospace', color='white', transform=ax_text.transAxes)
     current_title = 'Trias'
     text_title.set_text(current_title)
-    event_text_box = ax_text.text(0.5, 0.1, '', fontsize=12, color='white', fontfamily='monospace',
+    event_text_box = ax_text.text(0.5, 0.1, '', fontsize=10, color='white', fontfamily='monospace',
                                   bbox=dict(facecolor='black', alpha=0.7, boxstyle='round,pad=0.5'),
                                   transform=ax_text.transAxes, ha='center')
     lineT = ax_plot.axvline(x=0, color='grey', linewidth=1, linestyle='-')
     ax_plot.set_xlim(252, 0)  # Set the x-axis range from 252 to 0
-    sc = ax_plot.scatter([], [], alpha=0.5,color='cyan')    
-
-    # Add a legend for size representation
-    legend_sizes = [0.1]  # Example normalized sizes
-    legend_labels = [f'{size * data_impacts["Diameter km"].max():.1f} km' for size in legend_sizes]
-    legend_handles = [
-        plt.scatter([], [], s=size * 1000, alpha=0.5, label=label, color='cyan')
-        for size, label in zip(legend_sizes, legend_labels)
-    ]
-    ax_text.legend(handles=legend_handles, title="Impakty (velikost kráteru)", loc="lower right", fontsize=10, facecolor='black', edgecolor='white', framealpha=0, prop={'family': 'monospace'}, title_fontproperties={'family': 'monospace'})
+    sc = ax_plot.scatter([], [], alpha=0.5)
     return text_objects + lines + lines2 + [lineT] + [text_title] + [event_text_box] + [sc]   
 
 # Update function for animation
@@ -191,6 +188,33 @@ def update(frame):
         current_data = data_impacts[data_impacts['Age'] >= current_age]
         sc.set_offsets(np.c_[current_data['Age'], current_data['Random Y']])
         sc.set_sizes(current_data['Normalized Diameter'] * 1000)  # Scale sizes for better visibility
+        window_data = data[(data['Age'] <= current_age) & (data['Age'] >= current_age - sliding_window_size)]
+        if len(window_data) > 1:  # Ensure there is enough data for correlation
+            corr_matrix = window_data.iloc[:, 1:].apply(lambda col: col.fillna(col.mean())).corr()  # Exclude 'Age' column
+            ax_corr.clear()
+            ax_corr.set_title('Correlation Matrix', fontsize=8, color='white', fontfamily='monospace')
+            sns.heatmap(
+            corr_matrix, 
+            ax=ax_corr,
+            cbar=False,
+            cmap="coolwarm", 
+            annot=False,  # Set to True if you want numerical values displayed
+            fmt=".2f", 
+            linewidths=0.5, 
+            vmin=-1, vmax=1,  # Ensure full correlation range is shown
+            square=True,  # Keeps it visually uniform
+            cbar_kws={"shrink": 0.8},  # Adjust colorbar size
+            )
+            ax_corr.axis('on')
+            ax_corr.tick_params(axis='x', colors='white', labelsize=6)
+            ax_corr.tick_params(axis='y', colors='white', labelsize=6)
+            ax_corr.set_xticks(range(len(corr_matrix.columns)))
+            ax_corr.set_yticks(range(len(corr_matrix.columns)))
+            ax_corr.set_xticklabels(corr_matrix.columns, rotation=90, fontsize=6, fontfamily='monospace')
+            ax_corr.set_yticklabels(corr_matrix.columns, fontsize=6, fontfamily='monospace')
+        else:
+            ax_corr.clear()
+            ax_corr.set_title('Correlation Matrix\n(Not enough data)', fontsize=8, color='white', fontfamily='monospace')
     return text_objects + lines + lines2 + [lineT] + [text_title] + [event_text_box] + [sc]
 
 # Create the animation

@@ -26,6 +26,15 @@ data_impacts['Random Y'] = np.random.rand(len(data_impacts))
 # Scatter plot for animation
 sc = ax.scatter([], [], alpha=0.5)
 
+# Add a legend for size representation
+legend_sizes = [0.2, 0.5, 1.0]  # Example normalized sizes
+legend_labels = [f'{size * data_impacts["Diameter km"].max():.1f} km' for size in legend_sizes]
+legend_handles = [
+    plt.scatter([], [], s=size * 1000, alpha=0.5, label=label)
+    for size, label in zip(legend_sizes, legend_labels)
+]
+ax.legend(handles=legend_handles, title="Impacts", loc="upper right")
+
 # Update function for animation
 def update(frame):
     current_data = data_impacts.iloc[:frame + 1]
