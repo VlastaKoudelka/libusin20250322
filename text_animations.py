@@ -9,6 +9,7 @@ import textwrap
 data = pd.read_csv('./data/filtered_data3.csv')
 df_text = pd.read_csv('data/texts.csv')
 df_events = pd.read_csv('data\Events_texts.csv')
+
 #Select variables from the list
 data = data[['Age', 'BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 
              'BIO_Difference_Cubic', 'SEA_Modern land sea level  (C = 176.6 106km2/km)',
@@ -83,7 +84,7 @@ box_width = 50  # Maximum number of characters per line
 
 norm = mcolors.Normalize(vmin=0, vmax=len(data.columns) - 2)
 def init():
-    global text_objects, lines, lines2, lineT, text_title, event_text_box
+    global text_objects, lines, lines2, lineT, text_title, event_text_box, current_title
     text_objects = []
     lines = []
     lines2 = []
@@ -105,7 +106,8 @@ def init():
         line2.set_alpha(0.1)  # Set the alpha value for the second set of lines
         line2.set_data(data['Age'], data[column])  # Set the data for the second set of lines
     text_title = ax_text.text(leftTitlePos, topTitlePos, '', fontsize=12, fontfamily='monospace', color='white', transform=ax_text.transAxes)
-    text_title.set_text('Trias')
+    current_title = 'Trias'
+    text_title.set_text(current_title)
     event_text_box = ax_text.text(0.5, 0.1, '', fontsize=10, color='white', fontfamily='monospace',
                                   bbox=dict(facecolor='black', alpha=0.7, boxstyle='round,pad=0.5'),
                                   transform=ax_text.transAxes, ha='center')
@@ -115,6 +117,7 @@ def init():
 
 # Update function for animation
 def update(frame):
+    global current_title
     for i, column in enumerate(data.columns):
         if frame < len(data):
             text_objects[i].set_text(f"{column}: {round(data[column].iloc[frame], 2)}")
@@ -130,13 +133,13 @@ def update(frame):
         x = data['Age'][:frame + 1]
         current_age = data['Age'].iloc[frame]
         # Check if the current age is within any of the events
-        in_epoch = any(start >= current_age >= end for start, end in events)
         epoch_index = next((i for i, (start, end) in enumerate(events) if start >= current_age >= end), None)
         if epoch_index is not None:
+            current_title = df_events['Title'].iloc[epoch_index]
             current_event = df_events['Text'].iloc[epoch_index]
             current_event= "\n".join(textwrap.wrap(current_event, width=box_width))
         else:
-            current_event = []
+            current_event = ''
 
         
         for i, column in enumerate(data.columns[1:]):
@@ -150,7 +153,7 @@ def update(frame):
                 lines2[i].set_alpha(style_data[f"{column}_alpha2"].iloc[frame])
                 lines[i].set_linewidth(style_data[f"{column}_width"].iloc[frame])
         lineT.set_xdata([current_age, current_age])
-        text_title.set_text(df_text['Title'].iloc[frame])
+        text_title.set_text(current_title)
         #lineT.set_ydata([0, 1])  
         event_text_box.set_text(current_event)     
         # Dynamically adjust the y-axis limits
@@ -167,10 +170,10 @@ interval = 600 / frames  # Calculate interval for 1 minute duration
 ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=25)
 
 # Export the animation to an MP4 file
-# duration_seconds=4844
-# fps = frames / duration_seconds # Calculate the frames per second
-#writer = FFMpegWriter(fps=10, metadata=dict(artist='Me'), bitrate=2500)
-#ani.save('./output/animation.mp4', writer=writer)
+duration_seconds=4844
+fps = frames / duration_seconds # Calculate the frames per second
+writer = FFMpegWriter(fps=10, metadata=dict(artist='Me'), bitrate=2500)
+ani.save('./output/animation.mp4', writer=writer)
 
 # Show the animation
 plt.tight_layout()
