@@ -4,11 +4,14 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.animation import FFMpegWriter
 import matplotlib.colors as mcolors
 import textwrap
+import numpy as np
 
+outputPath = 'C:\Users\Koudy\Documents\projects\4.5Ga\output\'
 # Load the CSV file
 data = pd.read_csv('./data/filtered_data3.csv')
 df_text = pd.read_csv('data/texts.csv')
 df_events = pd.read_csv('data\Events_texts.csv')
+data_impacts = pd.read_csv('data\impakty.csv')
 
 #Select variables from the list
 data = data[['Age', 'BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)', 
@@ -52,6 +55,17 @@ for epoch, quantity_group in zip(events, quantities):
 smoothness = 10
 style_data = style_data.rolling(window=smoothness, min_periods=1).mean() # Smooth the opacity data
 
+# Prepare the impact data
+# Convert 'Age' and 'Diameter km' columns to numeric values
+data_impacts['Age'] = data_impacts['Age'].str.replace(',', '.').astype(float)
+data_impacts['Diameter km'] = data_impacts['Diameter km'].str.replace(',', '.').astype(float)
+
+# Normalize the diameter to the maximum value
+data_impacts['Normalized Diameter'] = data_impacts['Diameter km'] / data_impacts['Diameter km'].max()
+# Generate random Y positions for each impact
+data_impacts['Random Y'] = np.random.rand(len(data_impacts))
+
+
 # Ensure the data has the correct structure
 if data.empty or len(data.columns) < 2:
     raise ValueError("The CSV file must have at least two columns: 'Age' and at least one value column.")
@@ -84,7 +98,7 @@ box_width = 50  # Maximum number of characters per line
 
 norm = mcolors.Normalize(vmin=0, vmax=len(data.columns) - 2)
 def init():
-    global text_objects, lines, lines2, lineT, text_title, event_text_box, current_title
+    global text_objects, lines, lines2, lineT, text_title, event_text_box, current_title, sc
     text_objects = []
     lines = []
     lines2 = []
@@ -113,7 +127,8 @@ def init():
                                   transform=ax_text.transAxes, ha='center')
     lineT = ax_plot.axvline(x=0, color='grey', linewidth=1, linestyle='-')
     ax_plot.set_xlim(252, 0)  # Set the x-axis range from 252 to 0
-    return text_objects + lines + lines2 + [lineT] + [text_title] + [event_text_box]    
+    sc = ax_plot.scatter([], [], alpha=0.5)
+    return text_objects + lines + lines2 + [lineT] + [text_title] + [event_text_box] + [sc]   
 
 # Update function for animation
 def update(frame):
@@ -161,11 +176,15 @@ def update(frame):
         y_min = min([y.min() for y in all_y_values])
         y_max = max([y.max() for y in all_y_values])
         ax_plot.set_ylim(y_min, y_max)
-    return text_objects + lines + lines2 + [lineT] + [text_title] + [event_text_box]    
+        #update the scatter plot for impacts
+        current_data = data_impacts[data_impacts['Age'] >= current_age]
+        sc.set_offsets(np.c_[current_data['Age'], current_data['Random Y']])
+        sc.set_sizes(current_data['Normalized Diameter'] * 1000)  # Scale sizes for better visibility
+    return text_objects + lines + lines2 + [lineT] + [text_title] + [event_text_box] + [sc]
 
 # Create the animation
 frames = len(data)
-frames = 1500
+frames = 5041
 interval = 600 / frames  # Calculate interval for 1 minute duration
 ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=25)
 
@@ -173,7 +192,7 @@ ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, inter
 duration_seconds=4844
 fps = frames / duration_seconds # Calculate the frames per second
 writer = FFMpegWriter(fps=10, metadata=dict(artist='Me'), bitrate=2500)
-ani.save('./output/animation.mp4', writer=writer)
+#ani.save(outputPath + 'animation.mp4', writer=writer)
 
 # Show the animation
 plt.tight_layout()
