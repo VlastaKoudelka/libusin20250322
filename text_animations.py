@@ -21,6 +21,24 @@ data = data[['Age', 'BIO_ExtinctionIntensity (%)', 'BIO_OriginationIntensity(%)'
              'SR_87Sr/86Sr Mean', 'LIP_LIP_PDF', 'MAG_INT_mean', 'MAG_POL_FREQUENCY',
              'ZIR_Interpolated_mean_d18O', 'ZIR_Interpolated_mean_Hf']]
 
+columnsDict={
+    'Age': 'Věk (Ma)',
+    'BIO_ExtinctionIntensity (%)': 'Míra vymírání druhů',
+    'BIO_OriginationIntensity(%)': 'Míra vzniku nových druhů',
+    'BIO_Difference_Cubic': 'Počet druhů mořské fauny',
+    'SEA_Modern land sea level  (C = 176.6 106km2/km)': 'Hladina moře oproti dnešku',
+    'TEM_GAT': 'Globální průměrná teplota',
+    'TEM_dT': 'Rozdíl teplot mezi rovníkem a póly',
+    'CO2_pCO2 (ppm)': 'Koncentrace CO2 v atmosféře',
+    'O2_Mid O2%': 'Koncentrace kyslíku v atmosféře',
+    'SR_87Sr/86Sr Mean': 'Poměr izotopů stroncia v mořských usazeninách',
+    'LIP_LIP_PDF': 'Rozsáhlé vulkanické oblasti',
+    'MAG_INT_mean': 'Intensita magnetického pole Země',
+    'MAG_POL_FREQUENCY': 'Frekvence změny polarity magnetického pole Země',
+    'ZIR_Interpolated_mean_d18O': 'Poměr izotopů kyslíku v zrnech zirkonu',
+    'ZIR_Interpolated_mean_Hf': 'Poměr izotopů hafnia v zrnech zirkonu'
+}
+
 # Define events and quantities for each epoch and texts for each epoch
 events = [[float(onset.replace(',', '.')), float(offset.replace(',', '.'))] for onset, offset in zip(df_events['Onset'], df_events['Offset'])]
 
@@ -138,7 +156,7 @@ def init():
         plt.scatter([], [], s=size * 1000, alpha=0.5, label=label, color='cyan')
         for size, label in zip(legend_sizes, legend_labels)
     ]
-    ax_text.legend(handles=legend_handles, title="Impakty (velikost kráteru)", loc="lower right", fontsize=10, facecolor='black', edgecolor='white', framealpha=0, prop={'family': 'monospace'}, title_fontproperties={'family': 'monospace'})
+    ax_text.legend(handles=legend_handles, title="Dopady planetek (velikost kráteru)", loc="lower right", fontsize=10, facecolor='black', edgecolor='white', framealpha=0, prop={'family': 'monospace'}, title_fontproperties={'family': 'monospace'})
     return text_objects + lines + lines2 + [lineT] + [text_title] + [event_text_box] + [sc]   
 
 # Update function for animation
@@ -146,7 +164,7 @@ def update(frame):
     global current_title
     for i, column in enumerate(data.columns):
         if frame < len(data):
-            text_objects[i].set_text(f"{column}: {round(data[column].iloc[frame], 2)}")
+            text_objects[i].set_text(f"{columnsDict[column]}: {round(data[column].iloc[frame], 2)}")
             if i > 0:  # Skip 'Age' column
                 alpha_column_name = f"{column}_alpha"
                 if alpha_column_name in style_data.columns and frame < len(style_data):
