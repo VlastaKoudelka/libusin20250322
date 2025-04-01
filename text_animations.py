@@ -11,7 +11,7 @@ outputPath = 'C:/Users/Koudy/Documents/projects/4.5Ga/output/'
 # Load the CSV file
 data = pd.read_csv('./data/filtered_data3.csv')
 df_text = pd.read_csv('data/texts.csv')
-df_events = pd.read_csv('data\Events_texts.csv')
+df_events = pd.read_csv('data\Events_textsV3.csv')
 data_impacts = pd.read_csv('data\impakty.csv')
 
 #Select variables from the list
@@ -31,10 +31,10 @@ columnsDict={
     'TEM_dT': 'Rozdíl teplot mezi rovníkem a póly',
     'CO2_pCO2 (ppm)': 'Koncentrace CO2 v atmosféře',
     'O2_Mid O2%': 'Koncentrace kyslíku v atmosféře',
-    'SR_87Sr/86Sr Mean': 'Poměr izotopů stroncia v mořských usazeninách',
+    'SR_87Sr/86Sr Mean': 'Izotop stroncia v moř. usazeninách',
     'LIP_LIP_PDF': 'Rozsáhlé vulkanické oblasti',
     'MAG_INT_mean': 'Intensita magnetického pole Země',
-    'MAG_POL_FREQUENCY': 'Frekvence změny polarity magnetického pole Země',
+    'MAG_POL_FREQUENCY': 'Frekvence změny magnetického pole',
     'ZIR_Interpolated_mean_d18O': 'Poměr izotopů kyslíku v zrnech zirkonu',
     'ZIR_Interpolated_mean_Hf': 'Poměr izotopů hafnia v zrnech zirkonu'
 }
@@ -91,18 +91,20 @@ if data.empty or len(data.columns) < 2:
 
 # Prepare the figure with a dark style
 plt.style.use('dark_background')
+#2K 2048 × 1080; 4K 3840 × 2160; 8K 7680 × 4320
 dpi = 100  # Dots per inch
 width_in_pixels = 1920  # Desired width in pixels
 height_in_pixels = 1080  # Desired height in pixels
 fig, (ax_text, ax_plot) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [2, 2]},figsize=(width_in_pixels / dpi, height_in_pixels / dpi), dpi=dpi)
+fig.subplots_adjust(left=0.05, right=0.95, top=0.98, bottom=0.07)
 ax_text.axis('off')  # Turn off the axes for the text area
-ax_plot.set_xlabel('Age', color='white', fontfamily='monospace', fontsize=10)
-ax_plot.set_ylabel('Normalized Value', color='white', fontfamily='monospace', fontsize=10)
+ax_plot.set_xlabel('Věk (Ma)', color='white', fontfamily='monospace', fontsize=12)
+ax_plot.set_ylabel('Normalizovaná hodnota', color='white', fontfamily='monospace', fontsize=12)
 ax_plot.grid(color='gray', linestyle='--', linewidth=0.5)
 
 
 # Set tick parameters for dark mode
-ax_plot.tick_params(colors='white', labelsize=10)
+ax_plot.tick_params(colors='white', labelsize=12)
 for label in ax_plot.get_xticklabels() + ax_plot.get_yticklabels():
     label.set_fontfamily('monospace')
 
@@ -111,10 +113,10 @@ text_objects = []
 lines = []
 spacing = 0.065
 left_margin = 0
-top_margin = 0.95
-leftTitlePos = 0.5
+top_margin = 0.90
+leftTitlePos = 0.475
 topTitlePos = 0.95
-box_width = 50  # Maximum number of characters per line
+box_width = 45  # Maximum number of characters per line
 
 norm = mcolors.Normalize(vmin=0, vmax=len(data.columns) - 2)
 def init():
@@ -128,7 +130,7 @@ def init():
         else:
         # Normalize the index to the range [0, 1] for the colormap
             color = plt.cm.tab20(norm(i - 1))  # Use normalized index for colormap
-        text = ax_text.text(left_margin, top_margin - i * spacing, '', fontsize=12, fontfamily='monospace', color=color, transform=ax_text.transAxes)
+        text = ax_text.text(left_margin, top_margin - i * spacing, '', fontsize=15, fontfamily='monospace', color=color, transform=ax_text.transAxes)
         text_objects.append(text)
     
     # Create a line for each column except 'Age'
@@ -139,10 +141,10 @@ def init():
         lines2.append(line2)
         line2.set_alpha(0.1)  # Set the alpha value for the second set of lines
         line2.set_data(data['Age'], data[column])  # Set the data for the second set of lines
-    text_title = ax_text.text(leftTitlePos, topTitlePos, '', fontsize=14, fontfamily='monospace', color='white', transform=ax_text.transAxes)
-    current_title = 'Trias'
+    text_title = ax_text.text(leftTitlePos, topTitlePos, '', fontsize=18, fontfamily='monospace', color='white', transform=ax_text.transAxes)
+    current_title = ' '
     text_title.set_text(current_title)
-    event_text_box = ax_text.text(0.5, 0.1, '', fontsize=12, color='white', fontfamily='monospace',
+    event_text_box = ax_text.text(0.5, 0.1, '', fontsize=14, color='white', fontfamily='monospace',
                                   bbox=dict(facecolor='black', alpha=0.7, boxstyle='round,pad=0.5'),
                                   transform=ax_text.transAxes, ha='center')
     lineT = ax_plot.axvline(x=0, color='grey', linewidth=1, linestyle='-')
@@ -156,7 +158,19 @@ def init():
         plt.scatter([], [], s=size * 1000, alpha=0.5, label=label, color='cyan')
         for size, label in zip(legend_sizes, legend_labels)
     ]
-    ax_text.legend(handles=legend_handles, title="Dopady planetek (velikost kráteru)", loc="lower right", fontsize=10, facecolor='black', edgecolor='white', framealpha=0, prop={'family': 'monospace'}, title_fontproperties={'family': 'monospace'})
+    #ax_text.legend(handles=legend_handles, title="Dopady planetek (velikost kráteru)", loc="lower right", fontsize=14, facecolor='black', edgecolor='white', framealpha=0, prop={'family': 'monospace'}, title_fontproperties={'family': 'monospace'})
+    ax_text.legend(
+    handles=legend_handles,
+    title="Dopady planetek (velikost kráteru)",
+    loc="lower left",  # Keep the anchor point in the lower right
+    bbox_to_anchor=(left_margin, -0.2),  # Move the legend lower (x=1, y=-0.1)
+    fontsize=18,
+    facecolor='black',
+    edgecolor='white',
+    framealpha=0,
+    prop={'family': 'monospace',  'size': 15},
+    title_fontproperties={'family': 'monospace', 'size': 15}
+    )
     return text_objects + lines + lines2 + [lineT] + [text_title] + [event_text_box] + [sc]   
 
 # Update function for animation
@@ -218,10 +232,10 @@ interval = 600 / frames  # Calculate interval for 1 minute duration
 ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=25)
 
 # Export the animation to an MP4 file
-duration_seconds=4844
+duration_seconds=4842
 fps = frames / duration_seconds # Calculate the frames per second
-writer = FFMpegWriter(fps=10, metadata=dict(artist='Me'), bitrate=2500)
-#ani.save(outputPath + 'animation.mp4', writer=writer)
+writer = FFMpegWriter(fps=fps, metadata=dict(artist='Me'), bitrate=5000)
+ani.save(outputPath + '252MaFullHDWarp45v2.mp4', writer=writer)
 
 # Show the animation
 plt.tight_layout()
