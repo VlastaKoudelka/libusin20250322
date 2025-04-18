@@ -39,6 +39,21 @@ columnsDict={
     'ZIR_Interpolated_mean_Hf': 'Poměr izotopů hafnia v zrnech zirkonu'
 }
 
+# Convert 'Age' and 'Diameter km' columns to numeric values
+data_impacts['Age'] = data_impacts['Age'].str.replace(',', '.').astype(float)
+data_impacts['Diameter km'] = data_impacts['Diameter km'].str.replace(',', '.').astype(float)
+
+# Normalize the diameter to the maximum value
+data_impacts['Normalized Diameter'] = data_impacts['Diameter km'] / data_impacts['Diameter km'].max()
+# Generate random Y positions for each impact
+data_impacts['Random Y'] = np.random.rand(len(data_impacts))
+
+#select specific age
+ageBegin  = 23.05
+ageEnd = 0 
+data = data[(data['Age'] >= ageEnd) & (data['Age'] <= ageBegin)]
+data_impacts = data_impacts[(data_impacts['Age'] >= ageEnd) & (data_impacts['Age'] <= ageBegin)]
+
 # Define events and quantities for each epoch and texts for each epoch
 events = [[float(onset.replace(',', '.')), float(offset.replace(',', '.'))] for onset, offset in zip(df_events['Onset'], df_events['Offset'])]
 
@@ -73,17 +88,6 @@ for epoch, quantity_group in zip(events, quantities):
 #smooth the opacity data
 smoothness = 10
 style_data = style_data.rolling(window=smoothness, min_periods=1).mean() # Smooth the opacity data
-
-# Prepare the impact data
-# Convert 'Age' and 'Diameter km' columns to numeric values
-data_impacts['Age'] = data_impacts['Age'].str.replace(',', '.').astype(float)
-data_impacts['Diameter km'] = data_impacts['Diameter km'].str.replace(',', '.').astype(float)
-
-# Normalize the diameter to the maximum value
-data_impacts['Normalized Diameter'] = data_impacts['Diameter km'] / data_impacts['Diameter km'].max()
-# Generate random Y positions for each impact
-data_impacts['Random Y'] = np.random.rand(len(data_impacts))
-
 
 # Ensure the data has the correct structure
 if data.empty or len(data.columns) < 2:
@@ -148,11 +152,12 @@ def init():
                                   bbox=dict(facecolor='black', alpha=0.7, boxstyle='round,pad=0.5'),
                                   transform=ax_text.transAxes, ha='center')
     lineT = ax_plot.axvline(x=0, color='grey', linewidth=1, linestyle='-')
-    ax_plot.set_xlim(252, 0)  # Set the x-axis range from 252 to 0
+    ax_plot.set_xlim(ageBegin, ageEnd)  # Set the x-axis
+    ax_plot.set_ylim(0, 1.0)  # Set the y-axis limits
     sc = ax_plot.scatter([], [], alpha=0.5,color='cyan')    
 
     # Add a legend for size representation
-    legend_sizes = [0.1]  # Example normalized sizes
+    legend_sizes = [0.192]  # Example normalized sizes
     legend_labels = [f'{size * data_impacts["Diameter km"].max():.1f} km' for size in legend_sizes]
     legend_handles = [
         plt.scatter([], [], s=size * 1000, alpha=0.5, label=label, color='cyan')
@@ -214,11 +219,6 @@ def update(frame):
         text_title.set_text(current_title)
         #lineT.set_ydata([0, 1])  
         event_text_box.set_text(current_event)     
-        # Dynamically adjust the y-axis limits
-        all_y_values = [data[column][:frame + 1] for column in data.columns[1:]]
-        y_min = min([y.min() for y in all_y_values])
-        y_max = max([y.max() for y in all_y_values])
-        ax_plot.set_ylim(y_min, y_max)
         #update the scatter plot for impacts
         current_data = data_impacts[data_impacts['Age'] >= current_age]
         sc.set_offsets(np.c_[current_data['Age'], current_data['Random Y']])
@@ -227,15 +227,18 @@ def update(frame):
 
 # Create the animation
 frames = len(data)
-frames = 5041
+#frames = 5041
+#frames = 10
 interval = 600 / frames  # Calculate interval for 1 minute duration
 ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=25)
 
 # Export the animation to an MP4 file
 duration_seconds=4842
+duration_seconds = 30
 fps = frames / duration_seconds # Calculate the frames per second
 writer = FFMpegWriter(fps=fps, metadata=dict(artist='Me'), bitrate=5000)
-ani.save(outputPath + '252MaFullHDWarp45v2.mp4', writer=writer)
+ani.save('./output/NEOGEN.mp4', writer=writer)
+#ani.save(outputPath + '252MaFullHDWarp45v2.mp4', writer=writer)
 
 # Show the animation
 plt.tight_layout()
