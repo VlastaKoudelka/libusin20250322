@@ -54,6 +54,12 @@ ageEnd = 0
 data = data[(data['Age'] >= ageEnd) & (data['Age'] <= ageBegin)]
 data_impacts = data_impacts[(data_impacts['Age'] >= ageEnd) & (data_impacts['Age'] <= ageBegin)]
 
+# Normalize all columns in data except 'Age' to have a range in [0, 1]
+for column in data.columns[1:]:
+    min_val = data[column].min()
+    max_val = data[column].max()
+    data[column] = (data[column] - min_val) / (max_val - min_val)
+
 # Define events and quantities for each epoch and texts for each epoch
 events = [[float(onset.replace(',', '.')), float(offset.replace(',', '.'))] for onset, offset in zip(df_events['Onset'], df_events['Offset'])]
 
@@ -158,10 +164,10 @@ def init():
     sc = ax_plot.scatter([], [], alpha=0.5,color='cyan')    
 
     # Add a legend for size representation
-    legend_sizes = [0.0962]  # Example normalized sizes
+    legend_sizes = [0.0481]  # Example normalized sizes
     legend_labels = [f'{size * data_impacts["Diameter km"].max():.1f} km' for size in legend_sizes]
     legend_handles = [
-        plt.scatter([], [], s=size * 2000, alpha=0.5, label=label, color='cyan')
+        plt.scatter([], [], s=size * 4000, alpha=0.5, label=label, color='cyan')
         for size, label in zip(legend_sizes, legend_labels)
     ]
     #ax_text.legend(handles=legend_handles, title="Dopady planetek (velikost kráteru)", loc="lower right", fontsize=14, facecolor='black', edgecolor='white', framealpha=0, prop={'family': 'monospace'}, title_fontproperties={'family': 'monospace'})
@@ -223,22 +229,22 @@ def update(frame):
         #update the scatter plot for impacts
         current_data = data_impacts[data_impacts['Age'] >= current_age]
         sc.set_offsets(np.c_[current_data['Age'], current_data['Random Y']])
-        sc.set_sizes(current_data['Normalized Diameter'] * 2000)  # Scale sizes for better visibility
+        sc.set_sizes(current_data['Normalized Diameter'] * 4000)  # Scale sizes for better visibility
     return text_objects + lines + lines2 + [lineT] + [text_title] + [event_text_box] + [sc]
 
 # Create the animation
 frames = len(data)
-#frames = 5041
+#frames = 5041 #the full length from Trias to Today
 #frames = 10
 interval = 600 / frames  # Calculate interval for 1 minute duration
 ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=25)
 
 # Export the animation to an MP4 file
-duration_seconds=4842
-duration_seconds = 30
+duration_seconds=4842 #the full length from Trias to Today
 fps = frames / duration_seconds # Calculate the frames per second
+fps = 0.9605237056139655  #taken from 5041 frames / 4842 seconds
 writer = FFMpegWriter(fps=fps, metadata=dict(artist='Me'), bitrate=5000)
-ani.save('./output/NEOGEN.mp4', writer=writer)
+ani.save('./output/neogen.mp4', writer=writer)
 #ani.save(outputPath + '252MaFullHDWarp45v2.mp4', writer=writer)
 
 # Show the animation
