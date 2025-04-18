@@ -11,7 +11,7 @@ outputPath = 'C:/Users/Koudy/Documents/projects/4.5Ga/output/'
 # Load the CSV file
 data = pd.read_csv('./data/filtered_data3.csv')
 df_text = pd.read_csv('data/texts.csv')
-df_events = pd.read_csv('data\Events_textsV3.csv')
+df_events = pd.read_csv('data\Events_texts_neogen.csv')
 data_impacts = pd.read_csv('data\impakty.csv')
 
 #Select variables from the list
@@ -148,19 +148,20 @@ def init():
     text_title = ax_text.text(leftTitlePos, topTitlePos, '', fontsize=18, fontfamily='monospace', color='white', transform=ax_text.transAxes)
     current_title = ' '
     text_title.set_text(current_title)
+    boxAlpha = 0 # 0.7 when turned on
     event_text_box = ax_text.text(0.5, 0.1, '', fontsize=14, color='white', fontfamily='monospace',
-                                  bbox=dict(facecolor='black', alpha=0.7, boxstyle='round,pad=0.5'),
-                                  transform=ax_text.transAxes, ha='center')
+                                  bbox=dict(facecolor='black', alpha=boxAlpha, boxstyle='round,pad=0.5'),
+                                  transform=ax_text.transAxes, ha='center', alpha = boxAlpha)
     lineT = ax_plot.axvline(x=0, color='grey', linewidth=1, linestyle='-')
     ax_plot.set_xlim(ageBegin, ageEnd)  # Set the x-axis
     ax_plot.set_ylim(0, 1.0)  # Set the y-axis limits
     sc = ax_plot.scatter([], [], alpha=0.5,color='cyan')    
 
     # Add a legend for size representation
-    legend_sizes = [0.192]  # Example normalized sizes
+    legend_sizes = [0.0962]  # Example normalized sizes
     legend_labels = [f'{size * data_impacts["Diameter km"].max():.1f} km' for size in legend_sizes]
     legend_handles = [
-        plt.scatter([], [], s=size * 1000, alpha=0.5, label=label, color='cyan')
+        plt.scatter([], [], s=size * 2000, alpha=0.5, label=label, color='cyan')
         for size, label in zip(legend_sizes, legend_labels)
     ]
     #ax_text.legend(handles=legend_handles, title="Dopady planetek (velikost kráteru)", loc="lower right", fontsize=14, facecolor='black', edgecolor='white', framealpha=0, prop={'family': 'monospace'}, title_fontproperties={'family': 'monospace'})
@@ -222,7 +223,7 @@ def update(frame):
         #update the scatter plot for impacts
         current_data = data_impacts[data_impacts['Age'] >= current_age]
         sc.set_offsets(np.c_[current_data['Age'], current_data['Random Y']])
-        sc.set_sizes(current_data['Normalized Diameter'] * 1000)  # Scale sizes for better visibility
+        sc.set_sizes(current_data['Normalized Diameter'] * 2000)  # Scale sizes for better visibility
     return text_objects + lines + lines2 + [lineT] + [text_title] + [event_text_box] + [sc]
 
 # Create the animation
