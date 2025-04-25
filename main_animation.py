@@ -240,11 +240,11 @@ interval = 600 / frames  # Calculate interval for 1 minute duration
 ani = FuncAnimation(fig, update, frames=frames, init_func=init, blit=True, interval=25)
 
 # Export the animation to an MP4 file
-duration_seconds=4842 #the full length from Trias to Today
+duration_seconds=442.5 #the full length from Trias to Today
 fps = frames / duration_seconds # Calculate the frames per second
-fps = 0.9605237056139655  #taken from 5041 frames / 4842 seconds
+#fps = 0.9605237056139655  #taken from 5041 frames / 4842 seconds
 writer = FFMpegWriter(fps=fps, metadata=dict(artist='Me'), bitrate=5000)
-ani.save('./output/neogen.mp4', writer=writer)
+ani.save('./output/23.05MaFullHDNeogen.mp4', writer=writer)
 #ani.save(outputPath + '252MaFullHDWarp45v2.mp4', writer=writer)
 
 # Show the animation
